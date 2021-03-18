@@ -1,13 +1,14 @@
 <template>
   <div id="nav">
-    <Navigation :user="user" />
-    <router-view :user="user" />
+    <Navigation :user="user" @logout="logout" />
+    <router-view :user="user" @logout="logout" />
   </div>
 </template>
 
 <script>
 import Navigation from '@/components/Navigation'
 import db from './db.js'
+import Firebase from 'firebase'
 export default {
   name: 'App',
   data: function() {
@@ -15,13 +16,22 @@ export default {
       user: null
     }
   },
+  methods: {
+    logout: function() {
+      Firebase.auth()
+        .signOut()
+        .then(() => {
+          this.user = null
+          this.$router.push('login')
+        })
+    }
+  },
   mounted() {
-    db.collection('users')
-      .doc('6micHQopYd1Ha4YC1UAy')
-      .get()
-      .then(snapshot => {
-        this.user = snapshot.data().name
-      })
+    Firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        this.user = user
+      }
+    })
   },
   components: {
     Navigation
