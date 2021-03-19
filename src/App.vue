@@ -1,7 +1,13 @@
 <template>
   <div id="nav">
     <Navigation :user="user" @logout="logout" />
-    <router-view :user="user" @logout="logout" @addRoom="addRoom" />
+    <router-view
+      :user="user"
+      :rooms="rooms"
+      @logout="logout"
+      @deleteRoom="deleteRoom"
+      @addRoom="addRoom"
+    />
   </div>
 </template>
 
@@ -13,7 +19,8 @@ export default {
   name: 'App',
   data: function() {
     return {
-      user: null
+      user: null,
+      rooms: []
     }
   },
   methods: {
@@ -33,12 +40,38 @@ export default {
           name: payload,
           createdAt: Firebase.firestore.FieldValue.serverTimestamp()
         })
+    },
+    deleteRoom: function(payload) {
+      db.collection('users')
+        .doc(this.user.uid)
+        .collection('rooms')
+        .doc(payload)
+        .delete()
     }
   },
   mounted() {
     Firebase.auth().onAuthStateChanged(user => {
       if (user) {
         this.user = user
+        db.collection('users')
+          .doc(this.user.uid)
+          .collection('rooms')
+          .onSnapshot(snapshot => {
+            const snapData = []
+            snapshot.forEach(doc => {
+              snapData.push({
+                id: doc.id,
+                name: doc.data().name
+              })
+            })
+            this.rooms = snapData.sort((a, b) => {
+              if (a.name.toLowerCase() < b.name.toLowerCase()) {
+                return -1
+              } else {
+                return 1
+              }
+            })
+          })
       }
     })
   },
