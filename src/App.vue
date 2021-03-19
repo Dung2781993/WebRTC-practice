@@ -13,7 +13,8 @@ export default {
   name: 'App',
   data: function() {
     return {
-      user: null
+      user: null,
+      rooms: []
     }
   },
   methods: {
@@ -39,6 +40,25 @@ export default {
     Firebase.auth().onAuthStateChanged(user => {
       if (user) {
         this.user = user
+        db.collection('users')
+          .doc(this.user.uid)
+          .collection('rooms')
+          .onSnapshot(snapshot => {
+            const snapData = []
+            snapshot.forEach(doc => {
+              snapData.push({
+                id: doc.id,
+                name: doc.data().name
+              })
+            })
+            this.rooms = snapData.sort((a, b) => {
+              if (a.name.toLowerCase() < b.name.toLowerCase()) {
+                return -1
+              } else {
+                return 1
+              }
+            })
+          })
       }
     })
   },
