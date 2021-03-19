@@ -1,7 +1,7 @@
 <template>
   <div id="nav">
     <Navigation :user="user" @logout="logout" />
-    <router-view :user="user" @logout="logout" @addRoom="addRoom" />
+    <router-view :user="user" :rooms="rooms" @logout="logout" @addRoom="addRoom" />
   </div>
 </template>
 
