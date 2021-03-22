@@ -95,3 +95,172 @@
     </div>
   </div>
 </template>
+<script>
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import db from '../db.js'
+export default {
+  name: 'Attendees',
+  props: ['user'],
+  data: function() {
+    return {
+      attendeesApproved: [],
+      attendeesPending: [],
+      attendeeApproved: false,
+      attendeeJoined: false,
+      hostID: this.$route.params.hostID,
+      roomID: this.$route.params.roomID,
+      roomName: null,
+      hostDisplayName: null
+    }
+  },
+  components: {
+    FontAwesomeIcon
+  },
+  mounted() {
+    const roomRef = db
+      .collection('users')
+      .doc(this.hostID)
+      .collection('rooms')
+      .doc(this.roomID)
+
+    //Get Room Name
+    roomRef.get().then(roomDocument => {
+      if (roomDocument.exists) {
+        this.roomName = roomDocument.data().name
+      } else {
+        this.$router.replace('/')
+      }
+    })
+
+    roomRef.collection('attendees').onSnapshot(attendeeSnapshot => {
+      const tempPending = []
+      const tempApproved = []
+      let amCheckedIn = false
+
+      attendeeSnapshot.forEach(attendeeDocument => {
+        if (this.user.uid == attendeeDocument.id) {
+          amCheckedIn = true
+        }
+
+        if (this.hostID == attendeeDocument.id) {
+          this.hostDisplayName = attendeeDocument.data().displayName
+        }
+
+        if (attendeeDocument.data().approved) {
+          if (this.user.uid == attendeeDocument.id) {
+            this.attendeeApproved = true
+          }
+
+          tempApproved.push({
+            id: attendeeDocument.id,
+            displayName: attendeeDocument.data().displayName,
+            approved: attendeeDocument.data().approved,
+            webRTCID: attendeeDocument.data().webRTCID
+          })
+        } else {
+          if (this.user.uid == attendeeDocument.id) {
+            this.attendeeApproved = false
+          }
+
+          tempPending.push({
+            id: attendeeDocument.id,
+            displayName: attendeeDocument.data().displayName,
+            approved: attendeeDocument.data().approved,
+            webRTCID: attendeeDocument.data().webRTCID
+          })
+        }
+      })
+      this.attendeesApproved = tempApproved
+      this.attendeesPending = tempPending
+      if (!amCheckedIn) {
+        this.$router.push(`/checkin/${this.hostID}/${this.roomID}`)
+      }
+    })
+  },
+  methods: {
+    toggleApproval: function(attendeeID) {
+      if (this.user && this.user.uid == this.hostID) {
+        const ref = db
+          .collection('users')
+          .doc(this.user.uid)
+          .collection('rooms')
+          .doc(this.roomID)
+          .collection('attendees')
+          .doc(attendeeID)
+
+        ref.get().then(attendeeDocument => {
+          const approved = attendeeDocument.data().approved
+          if (approved) {
+            ref.update({
+              approved: !approved
+            })
+          } else {
+            ref.update({
+              approved: true
+            })
+          }
+        })
+      }
+    },
+    deleteAttendee: function(attendeeID) {
+      if (this.user && this.user.uid == this.hostID) {
+        db.collection('users')
+          .doc(this.user.uid)
+          .collection('rooms')
+          .doc(this.roomID)
+          .collection('attendees')
+          .doc(attendeeID)
+          .delete()
+      }
+    },
+    doJoin() {
+      this.$refs.webrtc.join()
+      this.attendeeJoined = true
+    },
+    doLeave() {
+      this.$refs.webrtc.leave()
+      this.attendeeJoined = false
+    },
+    doAttendeeJoined(joinID) {
+      const ref = db
+        .collection('users')
+        .doc(this.hostID)
+        .collection('rooms')
+        .doc(this.roomID)
+        .collection('attendees')
+        .doc(this.user.uid)
+      ref.update({
+        webRTCID: joinID
+      })
+    },
+    doAttendeeLeft(leaveID) {
+      const ref = db
+        .collection('users')
+        .doc(this.hostID)
+        .collection('rooms')
+        .doc(this.roomID)
+        .collection('attendees')
+        .doc(this.user.uid)
+      ref.update({
+        webRTCID: null
+      })
+    }
+  }
+}
+</script>
+<style lang="scss">
+.video-list {
+  margin-bottom: 10px;
+  background: transparent !important;
+}
+.video-item {
+  width: 50%;
+  display: inline-block;
+  background: transparent !important;
+}
+
+.video-item video {
+  width: 100%;
+  height: auto;
+}
+</style>
