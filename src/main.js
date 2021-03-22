@@ -1,4 +1,4 @@
-import { createApp, Vue } from 'vue'
+import { createApp} from 'vue'
 import App from './App.vue'
 import router from './router'
 import WebRTC from 'vue-webrtc'
@@ -9,6 +9,8 @@ import { faTrash, faPodcast, faVideo, faUser } from '@fortawesome/free-solid-svg
 window.io = io
 
 library.add(faTrash, faPodcast, faVideo, faUser)
-createApp(App)
-  .use(router, WebRTC)
-  .mount('#app')
+
+const app = createApp(App)
+app.use(router)
+app.component(WebRTC)
+app.mount('#app')
