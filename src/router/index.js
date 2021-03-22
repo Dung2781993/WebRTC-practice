@@ -4,6 +4,7 @@ import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Rooms from '../views/Rooms.vue'
 import CheckIn from '../views/CheckIn.vue'
+import Chat from '../views/Chat.vue'
 const routes = [
   {
     path: '/',
@@ -29,6 +30,16 @@ const routes = [
     path: '/checkin/:hostID/:roomID',
     name: 'CheckIn',
     component: CheckIn
+  },
+  {
+    path: '/chat/:hostID/:roomID',
+    name: 'Chat',
+    component: Chat
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'Home',
+    component: Home
   }
 ]
 
